@@ -1,0 +1,23 @@
+{
+  "name": "elm_build_and_test",
+  "version": "1.0.0",
+  "description": "Build and test an elm app with js-dependencies and css",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "serve -l 3030 dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "babelify": "^10.0.0",
+    "browserify": "^16.5.1",
+    "serve": "^11.3.2",
+    "uglify-js": "^3.10.0"
+  },
+  "dependencies": {
+    "date-fns": "^2.14.0"
+  }
+}

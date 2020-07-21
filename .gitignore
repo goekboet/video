@@ -1,0 +1,7 @@
+.ionide
+**/dist
+**/elm-stuff
+**/node_modules
+**/bin
+**/obj
+**/WebRoot/*
