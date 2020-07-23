@@ -31,10 +31,9 @@ main =
 
 -- MODEL
 
-type alias Item = String
-
 type alias Model = 
-  { key : Key
+  { appName : String
+  , key : Key
   , page : Maybe Page
   }
 
@@ -43,7 +42,9 @@ init f url key =
   let
       p = Page.fromUrl url
   in
-    ({ key = key
+    (
+    { appName = f
+    , key = key
     , page = p
     }
     , Cmd.none)
@@ -69,25 +70,25 @@ update msg model =
 
     UrlChanged url ->
       let
-        nRoute = Page.fromUrl url
+        destination = Page.fromUrl url
       in
-        ( { model | page = nRoute }
-        , case nRoute of
+        ( { model | page = destination }
+        , case destination of
           Just (Appointment h s) -> Cmd.none
           Just (Video h s) -> Cmd.none
           Just (Evaluation h s) -> Cmd.none
-          _ -> Cmd.none
+          _ -> url |> Url.toString |> Nav.load
         )
 
 
 -- VIEW
-homelink : Html msg
-homelink =
+homelink : String -> Html msg
+homelink appName =
     div [ class "content"
         , class "heavy" 
         ] 
         [ h1 [] 
-          [ text "Appointment" ]
+          [ a [ Attr.href "/" ] [ text appName ] ]
         ]
 
 routeToPage : Maybe Page -> List (Html msg)
@@ -104,7 +105,7 @@ view m =
     , body =
         [ div 
         [ class "root-view" ] 
-        [ homelink 
+        [ homelink m.appName
         , routeToPage m.page |> 
           div 
           [ class "content"

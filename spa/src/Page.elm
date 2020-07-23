@@ -1,11 +1,15 @@
 module Page exposing 
     ( Page(..)
     , fromUrl
-    , toUrl)
+    , toUrl
+    , internalLink)
 
 import Url exposing (Url)
 import Url.Parser as UrlP exposing (Parser, (</>))
 import Url.Builder as UrlB
+import Html exposing (Html)
+import Html.Attributes as Attr
+import FontAwesome as FA
 
 type Page
     = Appointment String Int
@@ -33,4 +37,14 @@ toUrl r =
         Appointment h t -> UrlB.absolute [ "appointment", h, String.fromInt t] [] 
         Video h t -> UrlB.absolute [ "appointment", h, String.fromInt t, "video"] []
         Evaluation h t -> UrlB.absolute [ "appointment", h, String.fromInt t, "evaluation" ] []
+
+internalLink : String -> Page -> Html msg
+internalLink label p =
+    Html.a 
+      [ toUrl p |> Attr.href
+      , Attr.class "proceed"
+      ] 
+      [ FA.fas_fa_arrow_alt_circle_right 
+      , Html.label [] [ Html.text label ]
+      ]
             

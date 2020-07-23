@@ -1,3 +1,5 @@
-import { toChristmas } from './dates.js'
+let appelement = document.getElementById("entrypoint");
 
-let app = Elm.Main.init({ flags: toChristmas() });
+let appname = appelement.getAttribute("data-appname")
+
+let app = Elm.Main.init({ flags: appname });

@@ -39,6 +39,7 @@ module Views =
 
 let webApp =
     choose [
+        route "/" >=> text "App reloaded"
         htmlView (spa None)
         setStatusCode 404 >=> text "Not Found" ]
 
