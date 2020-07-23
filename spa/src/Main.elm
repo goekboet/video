@@ -35,7 +35,13 @@ type alias Model =
   { appName : String
   , key : Key
   , page : Maybe Page
+  , appointment : Appointment.Model
   }
+
+type Msg 
+  = LinkClicked UrlRequest
+  | UrlChanged Url
+  | AppointmentMessage Appointment.Msg
 
 init : Flags -> Url -> Key -> (Model, Cmd Msg)
 init f url key =
@@ -46,16 +52,24 @@ init f url key =
     { appName = f
     , key = key
     , page = p
+    , appointment = Appointment.init
     }
-    , Cmd.none)
+    , case p of
+      Just (Appointment h s) -> 
+        Cmd.batch 
+        [ Appointment.getAppointment AppointmentMessage h s 
+        , Appointment.getTimezone AppointmentMessage
+        ]
+      Just (Video h s) -> Cmd.none
+      Just (Evaluation h s) -> Cmd.none
+      _ -> Cmd.none
+    )
   
 
 
 -- UPDATE
 
-type Msg 
-  = LinkClicked UrlRequest
-  | UrlChanged Url
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = 
@@ -79,6 +93,12 @@ update msg model =
           Just (Evaluation h s) -> Cmd.none
           _ -> url |> Url.toString |> Nav.load
         )
+      
+    AppointmentMessage appts ->
+        let
+            (newAppts, cmd) = Appointment.update AppointmentMessage appts model.appointment
+        in
+          ( { model | appointment = newAppts}, cmd )
 
 
 -- VIEW
@@ -91,10 +111,10 @@ homelink appName =
           [ a [ Attr.href "/" ] [ text appName ] ]
         ]
 
-routeToPage : Maybe Page -> List (Html msg)
-routeToPage p =
-  case p of
-  Just (Appointment h s) -> Appointment.view h s
+routeToPage : Model -> List (Html Msg)
+routeToPage m =
+  case m.page of
+  Just (Appointment h s) -> Appointment.view AppointmentMessage h s m.appointment
   Just (Video h s) -> Video.view h s 
   Just (Evaluation h s) -> Evaluation.view h s
   Nothing -> []
@@ -106,7 +126,7 @@ view m =
         [ div 
         [ class "root-view" ] 
         [ homelink m.appName
-        , routeToPage m.page |> 
+        , routeToPage m |> 
           div 
           [ class "content"
           , class "light"

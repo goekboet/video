@@ -7,6 +7,10 @@ h2, p {
     margin-bottom: 1em;
 }
 
+body {
+    line-height: 1.4;
+}
+
 ul {
     list-style: none;
 }

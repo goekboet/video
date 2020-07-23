@@ -1,0 +1,21 @@
+.appointmentFail {
+  display: flex;
+  align-items: baseline;
+}
+
+.appointmentFail p {
+    margin: 0 0 0 1em;
+}
+
+.appointmentFail p > button {
+    font-weight: bold;
+}
+
+.appointmentPending {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: xxx-large;
+  opacity: 0.25;
+}

@@ -29,9 +29,17 @@ module Views =
 
 
 
+type Appointment =
+    { Start : int
+      End : int;
+      Name : string
+      Host : string
+      CounterPart : string
+      }
 
-
-
+let appointmentH (h : string, t : int) : HttpHandler
+    =
+    json { Start = 1594796400; End = 1594958400; Name = "Counsel"; Host = "A hostier host"; CounterPart = "John Carpenter"}
 
 // ---------------------------------
 // Web app
@@ -40,6 +48,7 @@ module Views =
 let webApp =
     choose [
         route "/" >=> text "App reloaded"
+        routef "/api/appointment/%s/%i" appointmentH
         htmlView (spa None)
         setStatusCode 404 >=> text "Not Found" ]
 
