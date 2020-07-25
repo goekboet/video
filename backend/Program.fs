@@ -3,13 +3,16 @@ module Backend.App
 open System
 open System.IO
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Hosting
-open Microsoft.Extensions.Hosting
-open Microsoft.Extensions.Logging
+open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Hosting
 open Giraffe
 open Backend.SpaRoute
+open Backend.Twilio
+open Microsoft.Extensions.Options
 
 // ---------------------------------
 // Models
@@ -41,6 +44,14 @@ let appointmentH (h : string, t : int) : HttpHandler
     =
     json { Start = 1594796400; End = 1594958400; Name = "Counsel"; Host = "A hostier host"; CounterPart = "John Carpenter"}
 
+let getToken (h: string, t : int) : HttpHandler
+    =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
+        let creds = ctx.GetService<IOptions<TwilioCreds>>()
+        let token = mintToken creds.Value "someName" h t
+        
+        Successful.OK token next ctx
+
 // ---------------------------------
 // Web app
 // ---------------------------------
@@ -49,6 +60,7 @@ let webApp =
     choose [
         route "/" >=> text "App reloaded"
         routef "/api/appointment/%s/%i" appointmentH
+        routef "/api/appointment/%s/%i/token" getToken
         htmlView (spa None)
         setStatusCode 404 >=> text "Not Found" ]
 
@@ -70,7 +82,11 @@ let configureApp (app : IApplicationBuilder) =
         .UseGiraffe(webApp)
 
 let configureServices (services : IServiceCollection) =
+    let serviceProvider = services.BuildServiceProvider()
+    let settings = serviceProvider.GetService<IConfiguration>()
+
     services.AddGiraffe() |> ignore
+    services.Configure<TwilioCreds>(settings.GetSection("Twilio")) |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =
     builder.AddFilter(fun l -> l.Equals LogLevel.Information)

@@ -1,19 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>backend.App</AssemblyName>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <UserSecretsId>fa79c4da-99ce-4451-bbf2-cbf889637fd5</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Giraffe" Version="4.1.*" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.*" />
+    <PackageReference Include="Twilio" Version="5.45.1" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Include="SpaRoute.fs" />
+    <Compile Include="Twilio.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
 </Project>
