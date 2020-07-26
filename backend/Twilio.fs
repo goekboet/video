@@ -19,5 +19,11 @@ let mintToken
     let grants = new HashSet<IGrant>();
     grants.Add(grant) |> ignore
 
-    let token = Token (creds.AccountSid, creds.ApiKeySid, creds.ApiKeySecret, name, System.Nullable(), System.Nullable(), grants)
+    let token = Token ( creds.AccountSid
+                      , creds.ApiKeySid
+                      , creds.ApiKeySecret
+                      , name
+                      , System.Nullable()
+                      , System.Nullable()
+                      , grants)
     token.ToJwt()

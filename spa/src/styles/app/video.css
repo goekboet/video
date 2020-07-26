@@ -1,0 +1,29 @@
+.localTracks {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1em;
+}
+
+.localTracks button {
+    margin-left: 1em;
+}
+
+#Media {
+    flex-grow: 1;
+    border: solid;
+    border-radius: 5px;
+    margin-bottom: 1em;
+}
+
+.remoteParticipant {
+    display: flex;
+    margin-bottom: 1em;
+}
+
+.remoteParticipant label {
+    flex-grow: 1;
+}
+
+.remoteParticipant button {
+    margin-left: 1em;
+}
