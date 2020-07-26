@@ -13,6 +13,34 @@
     border: solid;
     border-radius: 5px;
     margin-bottom: 1em;
+    display: flex;
+}
+
+#Media i {
+    margin: auto;
+    font-size: xxx-large;
+    opacity: 0.25;
+}
+
+#Media span {
+    margin: auto;
+    text-align: center;
+}
+
+#Media button {
+    font-weight: bold;
+}
+
+.disconnectButton {
+    padding: 0.5em;
+    border: solid;
+    border-width: thin;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.disconnectButton:disabled {
+    opacity: 0.25;
 }
 
 .remoteParticipant {

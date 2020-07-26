@@ -13,6 +13,7 @@ open Giraffe
 open Backend.SpaRoute
 open Backend.Twilio
 open Microsoft.Extensions.Options
+open System.Collections.Generic
 
 // ---------------------------------
 // Models
@@ -48,9 +49,11 @@ let getToken (h: string, t : int) : HttpHandler
     =
     fun (next : HttpFunc) (ctx : HttpContext) ->
         let creds = ctx.GetService<IOptions<TwilioCreds>>()
-        let token = mintToken creds.Value "someName" h t
+        let conf = ctx.GetService<IConfiguration>()
+        let name = conf.GetValue("Testdata:User")
+        let token = mintToken creds.Value name h t
         
-        Successful.OK token next ctx
+        setBodyFromString token next ctx
 
 // ---------------------------------
 // Web app
@@ -93,14 +96,40 @@ let configureLogging (builder : ILoggingBuilder) =
            .AddConsole()
            .AddDebug() |> ignore
 
+
+// For testing we need to be able to have browse the app from two different browsers
+// where one is using a different name than the other. Normally this name would come from 
+// the authentication but here we will hardcode it via a command-line argument.
+// i.e.
+// dotnet run Port=5091 User=Alice
+// dotnet run Port=5092 User=Bob
 [<EntryPoint>]
-let main _ =
+let main args =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot     = Path.Combine(contentRoot, "WebRoot")
+    
+    let port = 
+        Seq.tryFind (fun (x: string) -> x.StartsWith("Port=")) args
+        |> Option.map (fun x -> x.Substring(5))
+        |> Option.defaultWith(fun _ -> "5090")
+
+    let testdata =
+        Seq.tryFind (fun (x : string) -> x.StartsWith("User=")) args
+        |> Option.map (fun x ->
+            let d = new Dictionary<string, string>() 
+            let u = x.Substring(5)
+            d.Add("Testdata:User", u) |> ignore
+            d)
+        |> Option.defaultWith(fun _ -> new Dictionary<string, string>())
+
     Host.CreateDefaultBuilder()
         .ConfigureWebHostDefaults(
             fun webHostBuilder ->
                 webHostBuilder
+                    .UseUrls(sprintf "http://localhost:%s" port)
+                    .ConfigureAppConfiguration(fun cfg ->
+                        cfg.AddInMemoryCollection(testdata) |> ignore
+                        )
                     .UseContentRoot(contentRoot)
                     .UseWebRoot(webRoot)
                     .Configure(Action<IApplicationBuilder> configureApp)

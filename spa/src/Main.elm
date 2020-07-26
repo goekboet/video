@@ -36,12 +36,14 @@ type alias Model =
   , key : Key
   , page : Maybe Page
   , appointment : Appointment.Model
+  , video : Video.Model
   }
 
 type Msg 
   = LinkClicked UrlRequest
   | UrlChanged Url
   | AppointmentMessage Appointment.Msg
+  | VideoMessage Video.Msg
 
 init : Flags -> Url -> Key -> (Model, Cmd Msg)
 init f url key =
@@ -53,6 +55,7 @@ init f url key =
     , key = key
     , page = p
     , appointment = Appointment.init
+    , video = Video.init
     }
     , case p of
       Just (Appointment h s) -> 
@@ -60,7 +63,7 @@ init f url key =
         [ Appointment.getAppointment AppointmentMessage h s 
         , Appointment.getTimezone AppointmentMessage
         ]
-      Just (Video h s) -> Cmd.none
+      Just (Video h s) -> Video.getToken VideoMessage h s
       Just (Evaluation h s) -> Cmd.none
       _ -> Cmd.none
     )
@@ -88,8 +91,12 @@ update msg model =
       in
         ( { model | page = destination }
         , case destination of
-          Just (Appointment h s) -> Cmd.none
-          Just (Video h s) -> Cmd.none
+          Just (Appointment h s) -> 
+            Cmd.batch 
+            [ Appointment.getAppointment AppointmentMessage h s 
+            , Appointment.getTimezone AppointmentMessage
+            ]
+          Just (Video h s) -> Video.getToken VideoMessage h s
           Just (Evaluation h s) -> Cmd.none
           _ -> url |> Url.toString |> Nav.load
         )
@@ -98,7 +105,13 @@ update msg model =
         let
             (newAppts, cmd) = Appointment.update AppointmentMessage appts model.appointment
         in
-          ( { model | appointment = newAppts}, cmd )
+          ( { model | appointment = newAppts }, cmd )
+
+    VideoMessage pageMsg ->
+        let
+            (newVideoModel, cmd) = Video.update VideoMessage pageMsg model.video
+        in
+          ( { model | video = newVideoModel }, cmd )
 
 
 -- VIEW
@@ -115,13 +128,13 @@ routeToPage : Model -> List (Html Msg)
 routeToPage m =
   case m.page of
   Just (Appointment h s) -> Appointment.view AppointmentMessage h s m.appointment
-  Just (Video h s) -> Video.view h s 
+  Just (Video h s) -> Video.view VideoMessage m.video h s 
   Just (Evaluation h s) -> Evaluation.view h s
   Nothing -> []
 
 view : Model -> Browser.Document Msg
 view m =
-  { title = "Publish"
+  { title = "Video"
     , body =
         [ div 
         [ class "root-view" ] 
@@ -141,4 +154,9 @@ view m =
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
+subscriptions m = 
+  case m.page of
+    Just (Appointment h s) -> Sub.none
+    Just (Video h s) -> Video.subscriptions VideoMessage
+    Just (Evaluation h s) -> Sub.none
+    _ -> Sub.none
