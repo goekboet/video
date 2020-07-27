@@ -15,6 +15,18 @@ app.ports.connect.subscribe(t => {
         room => {
             app.ports.connection.send(room.name)
             app.ports.disconnect.subscribe(disconnect(room))
+
+            room.participants.forEach(participant => {
+                app.ports.counterpartJoinedSignal.send(participant.identity)
+              });
+
+            room.once('participantConnected', participant => {
+                app.ports.counterpartJoinedSignal.send(participant.identity)
+            });
+
+            room.once('participantDisconnected', participant => {
+              app.ports.counterpartLeftSignal.send(participant.identity)
+            });
         },
         reason => {
             console.log(reason)

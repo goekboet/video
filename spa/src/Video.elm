@@ -23,22 +23,36 @@ type ConnectionStatus
     | Errored
     | Open
 
-type alias Model = ConnectionStatus
+type CounterPartStatus
+    = Waiting
+    | Online
+    | Offline
 
-connected : Model
-connected = Open
+type alias Model = 
+    { connection : ConnectionStatus
+    , counterpart : CounterPartStatus
+    }
+
+connected : Model -> Model
+connected m = { m | connection = Open }
+
+counterpartJoined : Model -> Model
+counterpartJoined m = { m | counterpart = Online }
+
+counterpartLeft : Model -> Model
+counterpartLeft m = { m | counterpart = Offline }
 
 close : Model
-close = Closed
+close = { connection = Closed, counterpart = Offline }
 
-connectionError : Model
-connectionError = Errored
+connectionError : Model -> Model
+connectionError m = { m | connection = Errored }
 
-reconnection : Model
-reconnection = Pending
+reconnection : Model -> Model
+reconnection m = { m | connection = Pending }
 
 init : Model
-init = Pending
+init = { connection = Pending, counterpart = Waiting }
 
 type Msg
     = Noop
@@ -46,6 +60,8 @@ type Msg
     | TwilioConnection (Maybe String)
     | Disconnect
     | Reconnect String Int
+    | CounterpartJoined String
+    | CounterpartLeft String
 
 getToken : (Msg -> msg) -> String -> Int -> Cmd msg
 getToken toApp host start =
@@ -64,26 +80,35 @@ update toApp msg model =
         GotToken (Ok t) -> 
             (model, connect t)
         GotToken (Err _) -> 
-            (connectionError, Cmd.none)
+            (connectionError model, Cmd.none)
         TwilioConnection (Just _) ->
-            (connected, Cmd.none)
+            (connected model, Cmd.none)
         TwilioConnection Nothing ->
-            (connectionError, Cmd.none)
+            (connectionError model, Cmd.none)
         Disconnect ->
             (close, disconnect ())
         Reconnect h s ->
-            (reconnection, getToken toApp h s)
+            (reconnection model, getToken toApp h s)
+        CounterpartJoined _ -> (counterpartJoined model, Cmd.none)
+        CounterpartLeft _ -> (counterpartLeft model, Cmd.none)
 
 port connection : (Maybe String -> msg) -> Sub msg
+port counterpartJoinedSignal : (String -> msg) -> Sub msg
+port counterpartLeftSignal : (String -> msg) -> Sub msg
 
 subscriptions : (Msg -> msg) -> Sub msg
-subscriptions toApp = connection (toApp << TwilioConnection)
+subscriptions toApp = 
+    Sub.batch
+    [ connection (toApp << TwilioConnection)
+    , counterpartJoinedSignal (toApp << CounterpartJoined)
+    , counterpartLeftSignal (toApp << CounterpartLeft)
+    ]
 
 mediaElement : (Msg -> msg) -> Model -> String -> Int -> Html msg
 mediaElement toApp m h s =
     let
         content = 
-            case m of
+            case m.connection of
             Closed -> 
                 Html.span [] 
                 [ Html.h3 [] [ Html.text "Connection closed" ]
@@ -108,7 +133,7 @@ mediaElement toApp m h s =
 
 disconnectButton : (Msg -> msg) -> Model -> Html msg  
 disconnectButton toApp m =
-    case m of
+    case m.connection of
     Open -> 
         Html.button 
         [ Attr.class "disconnectButton"
@@ -120,6 +145,21 @@ disconnectButton toApp m =
         , Attr.disabled True ] 
         [ Html.text "Disconnect" ]
 
+counterpartStatus : Model -> Html msg
+counterpartStatus m =
+    let
+        status = 
+            case m.counterpart of
+            Waiting -> "Counterpart: (waiting to join)"
+            Online -> "Counterpart: (online)"
+            Offline -> "Counterpart: (offline)"
+    in
+    Html.span [ Attr.class "remoteParticipant" ] 
+      [ Html.label [] [ Html.text status ]
+      , Html.button [] [ Html.text "Audio" ]
+      , Html.button [] [ Html.text "Video" ]
+      ]
+
 view : (Msg -> msg) -> Model -> String -> Int -> List (Html msg)
 view toApp m host start =
     [ Html.h2 [] [ Html.text "Video" ]
@@ -128,11 +168,7 @@ view toApp m host start =
       , Html.button [] [ Html.text "Video" ] 
       ]
     , mediaElement toApp m host start 
-    , Html.span [ Attr.class "remoteParticipant" ] 
-      [ Html.label [] [ Html.text "Counterpart" ]
-      , Html.button [] [ Html.text "Audio" ]
-      , Html.button [] [ Html.text "Video" ]
-      ]
+    , counterpartStatus m
     , disconnectButton toApp m 
     ]
 
